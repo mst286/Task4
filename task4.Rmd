@@ -1,0 +1,153 @@
+---
+title: "task4"
+author: "Mattia Storero"
+date: "17/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(ggplot2)
+library(knitr)
+library(scales)
+library(dplyr)
+library(forecast)
+
+```
+
+
+
+
+##Background
+Firstly, the data was downloaded
+```{r}
+
+rm(list = ls())
+data = read.csv("http://ansatte.uit.no/oystein.myrland/data/storedata.csv", header = TRUE)
+
+data <- data %>% mutate(Order_Date = as.Date(Order_Date),
+         year = lubridate::year(Order_Date),
+         month = lubridate::month(Order_Date))
+
+```
+
+##FIRST TASK
+For the last 3 months of 2017:
+-total sales by month, region 1 and 9, Customer_segment ("corporate" and "Consumer")
+The final output will be called Table1
+
+```{r}
+data1 <- data[which(data$year=="2017"), ]
+
+
+data1 <- data1[data1$Region=="Region 1" | data1$Region=="Region 9", ]
+data1 <- data1[data1$month=="10"|data1$month=="11"|data1$month=="12", ]
+data1 <- data1[data1$Customer_Segment=="Corporate"|data1$Customer_Segment=="Consumer", ]
+
+data1 <- data1 %>% group_by(month, Region, Customer_Segment) %>%
+  summarise(TOTSales = sum(Sales))
+
+Table1 <- kable(data1) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+Table1
+```
+
+##SECOND TASK
+Making a plot of the monthly total sales in:
+-Region 1 and 13
+-2015, 2016, 2017
+The final output will be called Figure1
+```{r}
+data2 <- data[which(data$year=="2015"|data$year=="2016"|data$year=="2017"), ]
+
+
+data2 <- data2[data2$Region=="Region 1" | data2$Region=="Region 13", ]
+
+data2 <- data2 %>% group_by(year, month, Region) %>%
+  summarise(TOTSales = sum(Sales))
+data2 <- data2 %>% mutate(date = as.Date(lubridate::ymd(paste(year,month,01)))) 
+
+Figure1 <- ggplot(aes(y = TOTSales, x = date, color = Region),
+      data = data2) +
+  labs(x="year", y="TOTSales") + geom_line() +
+  ggtitle("Monthly sales from 2015 to 2017") + scale_y_continuous(limits = c(0, 60000)) +  scale_x_date(breaks = date_breaks("months"), labels = date_format("%b-%y")) 
+
+
+Figure1
+
+
+```
+##THIRD TASK
+Identify the months where the total Sales in Region 13 is greater than the total Sales in Region 1 (in figure1).
+This output will be put in a table (Table2)
+```{r}
+
+data3 <- data2 
+data3.1 <- data3 %>% filter(Region == "Region 1")
+data3.13 <- data3 %>% filter(Region == "Region 13")
+Table2 <- full_join(data3.1, data3.13, by="date") %>%
+  mutate(diff = (TOTSales.y - TOTSales.x) > 0)
+Table2 <- Table2 %>% filter(diff > 0)
+
+kable(Table2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+
+```
+
+##FOURTH TASK
+Find average Profit per Customer_Segment and Product_Category:
+-in 2017
+-for all regions (excepts 3,5,8)
+Create Table3 which is the segment that produced the highest average profit
+
+
+```{r}
+
+data4 <- data[which(data$year=="2017"),]
+data4 <-data4[!(data4$Region=="Region 3" | data4$Region=="Region 5") | data4$Region=="Region 8",]
+
+data4 <- data4 %>% group_by(Product_Category, Customer_Segment) %>%
+  summarise(Meanprofit = mean(Profit))                    
+
+data4 <- data4 %>% 
+    group_by(Customer_Segment) %>% 
+    slice(which.max(Meanprofit))                    
+
+Table3 <-  max(data4$Meanprofit, na.rm = TRUE)
+
+                    
+```
+
+##FIFTH TASK 
+Estimate a SARIMA model on the aggregated monthly Order_Quantity in the Customer_Segment; Small Business and Product_Category; Office Supplies. The SARIMA model contains the following parameters:
+p - AR order
+d - difference order
+q - MA order
+P - SAR order
+D - seasonal difference
+Q - SMA order
+S - seasonal period (12 months in these data)
+Iterate p and q over 0,1,2,3,4, d over 0,1, P and Q over 0,1,2,3,4, D over 0,1, and keep S fixed at 12. This gives a total of 2500 models. Estimate these models on the monthly data from 2014 through 2016, and identify the best SARIMA model on a holdout sample from 2017, based on the smallest RMSE (Root Mean Square Error). Produce a plot of the whole time series, and add onto it the 2017 forecast from the best SARIMA model, together with the actual aggregated monthly Order_Quantity. This output is Figure 2. Specify what was the best SARIMA model on the plot.
+
+```{r}
+
+data5 <- data()
+
+```
+
+
+
+
+
+
+
+
+
+
