@@ -137,8 +137,15 @@ S - seasonal period (12 months in these data)
 Iterate p and q over 0,1,2,3,4, d over 0,1, P and Q over 0,1,2,3,4, D over 0,1, and keep S fixed at 12. This gives a total of 2500 models. Estimate these models on the monthly data from 2014 through 2016, and identify the best SARIMA model on a holdout sample from 2017, based on the smallest RMSE (Root Mean Square Error). Produce a plot of the whole time series, and add onto it the 2017 forecast from the best SARIMA model, together with the actual aggregated monthly Order_Quantity. This output is Figure 2. Specify what was the best SARIMA model on the plot.
 
 ```{r}
+#background of SARIMA MODEL
+data5 <- data[data$Customer_Segment=="Small Business"& data$Product_Category=="Office Supplies", ]
 
-data5 <- data()
+data5 <- data5 %>% group_by(year, month) %>%
+  summarise(sum.order.quantity = sum(Order_Quantity))    
+
+data5.1 <- data5[data5$year=="2014"| data5$year=="2015"|data5$year=="2016", ]
+data5.2 <- data5[data5$year=="2017", ]
+
 
 ```
 
