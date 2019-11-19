@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 library(kableExtra)
 library(ggplot2)
@@ -17,16 +17,17 @@ library(knitr)
 library(scales)
 library(dplyr)
 library(forecast)
-
+library(readxl)
+library(ggpubr)
 ```
 
 
 
 
-##Background
-Firstly, the data was downloaded
-```{r}
+## BACKGROUND
 
+Firstly, the data was downloaded from "http://ansatte.uit.no/oystein.myrland/data/storedata.csv" and then analysed.
+```{r, include=FALSE}
 rm(list = ls())
 data = read.csv("http://ansatte.uit.no/oystein.myrland/data/storedata.csv", header = TRUE)
 
@@ -36,12 +37,11 @@ data <- data %>% mutate(Order_Date = as.Date(Order_Date),
 
 ```
 
-##FIRST TASK
-For the last 3 months of 2017:
--total sales by month, region 1 and 9, Customer_segment ("corporate" and "Consumer")
-The final output will be called Table1
+## FIRST TASK
 
-```{r}
+For the last 3 months of 2017 were calculated the total sales by month, for region 1 and 9 and for some parts of the Customer_segment ("corporate" and "Consumer"). The final output will be called Table1.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 data1 <- data[which(data$year=="2017"), ]
 
 
@@ -58,12 +58,10 @@ Table1 <- kable(data1) %>%
 Table1
 ```
 
-##SECOND TASK
-Making a plot of the monthly total sales in:
--Region 1 and 13
--2015, 2016, 2017
-The final output will be called Figure1
-```{r}
+## SECOND TASK
+
+After that, a plot of the monthly total sales was made for Region 1 and 13 in 2015, 2016 and 2017. The final output will be called Figure1.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 data2 <- data[which(data$year=="2015"|data$year=="2016"|data$year=="2017"), ]
 
 
@@ -83,10 +81,12 @@ Figure1
 
 
 ```
-##THIRD TASK
-Identify the months where the total Sales in Region 13 is greater than the total Sales in Region 1 (in figure1).
-This output will be put in a table (Table2)
-```{r}
+
+## THIRD TASK
+
+Then, the months in which the number of total Sales in Region 13 is greater than the total Sales in Region 1 were identified (in figure1). This output will be put in a table (Table2).
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 data3 <- data2 
 data3.1 <- data3 %>% filter(Region == "Region 1")
@@ -101,14 +101,13 @@ kable(Table2) %>%
 
 ```
 
-##FOURTH TASK
-Find average Profit per Customer_Segment and Product_Category:
--in 2017
--for all regions (excepts 3,5,8)
-Create Table3 which is the segment that produced the highest average profit
+## FOURTH TASK
+
+The average Profit per Customer_Segment and Product_Category was found for all regions(excepted 3, 5 and 8) in 2017.
+To make it clearer, the Table3 was created. This last one represents the segment that produced the highest average profit.
 
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
 
 data4 <- data[which(data$year=="2017"),]
 data4 <-data4[!(data4$Region=="Region 3" | data4$Region=="Region 5") | data4$Region=="Region 8",]
@@ -121,12 +120,16 @@ data4 <- data4 %>%
     slice(which.max(Meanprofit))                    
 
 Table3 <-  max(data4$Meanprofit, na.rm = TRUE)
-
+Table3
                     
 ```
+It's easy to see that the consumer segment with the highest profit is the Small Business one with a mean number of 544.4429.
 
-##FIFTH TASK 
-Estimate a SARIMA model on the aggregated monthly Order_Quantity in the Customer_Segment; Small Business and Product_Category; Office Supplies. The SARIMA model contains the following parameters:
+
+
+## FIFTH TASK 
+
+The last point was to estimate a SARIMA model on the aggregated monthly Order_Quantity in the Customer_Segment; Small Business and Product_Category; Office Supplies. The SARIMA model contains the following parameters:
 p - AR order
 d - difference order
 q - MA order
@@ -134,9 +137,12 @@ P - SAR order
 D - seasonal difference
 Q - SMA order
 S - seasonal period (12 months in these data)
-Iterate p and q over 0,1,2,3,4, d over 0,1, P and Q over 0,1,2,3,4, D over 0,1, and keep S fixed at 12. This gives a total of 2500 models. Estimate these models on the monthly data from 2014 through 2016, and identify the best SARIMA model on a holdout sample from 2017, based on the smallest RMSE (Root Mean Square Error). Produce a plot of the whole time series, and add onto it the 2017 forecast from the best SARIMA model, together with the actual aggregated monthly Order_Quantity. This output is Figure 2. Specify what was the best SARIMA model on the plot.
 
-```{r}
+
+The procedures were described in this way:
+"Iterate p and q over 0,1,2,3,4, d over 0,1, P and Q over 0,1,2,3,4, D over 0,1, and keep S fixed at 12. This gives a total of 2500 models. Estimate these models on the monthly data from 2014 through 2016, and identify the best SARIMA model on a holdout sample from 2017, based on the smallest RMSE (Root Mean Square Error). Produce a plot of the whole time series, and add onto it the 2017 forecast from the best SARIMA model, together with the actual aggregated monthly Order_Quantity. This output is Figure 2. Specify what was the best SARIMA model on the plot."
+
+```{r, include=FALSE}
 #background of SARIMA MODEL
 data5 <- data[data$Customer_Segment=="Small Business"& data$Product_Category=="Office Supplies", ]
 
@@ -150,10 +156,85 @@ data5.2 <- data5[data5$year=="2017", ]
 ```
 
 
+```{r, include=FALSE}
+tsdata5.1 <- ts(data5.1$sum.order.quantity, frequency = 12, start =c(2014,1), end = c(2016,12))
+
+tsdata5.2 <- ts(data5.2$sum.order.quantity, frequency = 12, start =c(2017,1), end = c(2017,12))
+
+plot(tsdata5.1)
+plot(tsdata5.2)
+#trying with normal parameters
+#get the optimal one
+autoarima1 <- auto.arima(tsdata5.1)
+autoarima2 <- auto.arima(tsdata5.2)
+
+forecast1 <- forecast(autoarima1, h=12)
+forecast1
+plot(forecast1)
+
+ARIMAfit = auto.arima(diff(tsdata5.1), approximation=FALSE,trace=FALSE)
+summary(ARIMAfit)
+
+
+```
+
+
+```{r echo=FALSE, warning=FALSE}
+test1 <- arima(tsdata5.1, order = c(1,0,1), seasonal = c(1,1,0))
+test.forecast1 <- forecast(test1, h=12)
+Figure2.1 <- test.forecast1 %>% autoplot(xlab="Year", ylab="Quantity of Order",
+    main="Quantity of orders from 2014 to 2016 with prevision")
+Figure2.1
+
+Figure2.2 <- ggplot(aes(y = sum.order.quantity, x = month),
+      data = data5.2) +
+  labs(x="month", y="quantity") + geom_line() +
+  ggtitle("Quantity of orders in 2017")
+Figure2.2
+
+
+```
+
+```{r, include=FALSE}
+
+Figure2 <- ggarrange(Figure2.1, Figure2.2,
+                    ncol = 1, nrow = 2)
+Figure2
+
+```
 
 
 
+Figure2 consists in a comparison between the prevision and the efective data. It's possible to see that the the model didn't predict the results in a accurate way.
 
+
+
+```{r, include=FALSE}
+#iterating#notuseful
+test <- Arima(tsdata5.1)
+forecasttest <- forecast(test, h=12)
+plot(forecasttest)
+```
+
+```{r eval=FALSE, include=FALSE}
+
+#attempt to use the parametres assigned but error
+p <- 0:4
+q <- 0:4
+P <- 0:4
+Q <- 0:4
+d <- 0:1
+D <- 0:1
+
+modellist <- list()
+for (i in p){
+  for (i in q){
+    for (i in d){
+      for (i in P){
+        for (i in Q){
+          for (i in D){
+      modellist <- Arima(tsdata5.1, order=c(p,q,d), seasonal=c(P,D,Q), method="ML")  }}}}}}
+```
 
 
 
